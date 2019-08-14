@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+    <script src="js/Noise.js"></script>
+    <title>Test</title>
+</head>
+<body>
+    <div id ="output_field"></div>
+    <script>
+        const loadModel = async function(){
+            const model = await tf.loadModel('model/model.json')
+        }
+        loadModel()
+    </script>
+</body>
+</html>
