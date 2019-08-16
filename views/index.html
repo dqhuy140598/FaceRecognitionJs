@@ -4,17 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2.7/dist/tf.min.js"></script>
     <script src="js/Noise.js"></script>
+    <script>
+                function openCvReady() {
+                    const imageData = document.getElementById("image");
+                    const image = cv.imread(imageData);
+                    const mat = cv.matFromArray(4,3,cv.CV_64FC1,[1,2,3,4,5,6,7,8,9,10,11,12]);
+                    console.log(mat)
+                    
+                }
+    </script>
+
+    
+  
     <title>Test</title>
 </head>
 <body>
-    <div id ="output_field"></div>
-    <script>
-        const loadModel = async function(){
-            const model = await tf.loadModel('model/model.json')
-        }
-        loadModel()
-    </script>
+    <canvas id="imageCanvas" ></canvas>
+    <div class="modal"></div>
+    <img id="image" src="img/test.jpg" alt="">
+    <script async src="js/opencv/opencv.js" onload="openCvReady();"></script>
+    <!-- <script async type="text/javascript" src="https://docs.opencv.org/master/opencv.js" onload="openCvReady();"></script> -->
 </body>
-</html>
+</html> 

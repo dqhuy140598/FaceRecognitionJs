@@ -14,10 +14,148 @@
 
 <video  id="_webcam" style="display: none;" playsinline></video>
 <canvas id="_imageData"></canvas>
-
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2.7/dist/tf.min.js"></script>
 <script src="js/utils/BRFv4Stats.js"></script>
 <script src="js/BRFv4DemoMinimalWebcam.js"></script>
+<script>
+  function openCvReady() {
+    console.log("Success load opencvjs");
+      
+    handleTrackingResults = function(
+      brfv4,          // namespace
+      faces,          // tracked faces
+      imageDataCtx    // canvas context to draw into
+    ) {
+
+
+      for(var i = 0; i < faces.length; i++) {
+
+        var face = faces[i];
+
+        console.log(face);
+
+        if(face.state === brfv4.BRFState.FACE_TRACKING_START ||
+          face.state === brfv4.BRFState.FACE_TRACKING) {
+          
+          
+          //Check box size and box area
+
+          const {imageWidth,imageHeight} = getOriginalImageInfor()
+
+          const isPassCheckSizeFace = checkSize(face.bounds,{imageWidth,imageHeight})
+
+          if (isPassCheckSizeFace){
+
+                //check liveness by eyeclose and mount open
+
+                const points = face.points;
+
+                checkFacePose(points)
+
+                // const leftEyePoints = face.points.slice(36,42);
+
+                // const rightEyePoints = face.points.slice(42,48);
+
+                // const mouthPoints = face.points.slice(60,68)
+
+                // const isLiveNess = checkLiveNess(leftEyePoints,rightEyePoints,mouthPoints)
+
+                const isLiveNess = false;
+
+                drawFaceBoundingBox(face.bounds,isLiveNess);
+          }
+          
+
+          imageDataCtx.strokeStyle = "#00a0ff";
+
+          for(var k = 0; k < face.vertices.length; k += 2) {
+            imageDataCtx.beginPath();
+            imageDataCtx.arc(face.vertices[k], face.vertices[k + 1], 2, 0, 2 * Math.PI);
+            imageDataCtx.stroke();
+          }
+        }
+      }
+    };
+
+    onResize = function () {
+
+      // fill whole browser
+
+      var imageData = document.getElementById("_imageData");
+
+      var ww = window.innerWidth;
+      var wh = window.innerHeight;
+
+      var s = wh / imageData.height;
+
+      if(imageData.width * s < ww) {
+        s = ww / imageData.width;
+      }
+
+      var iw = imageData.width * s;
+      var ih = imageData.height * s;
+      var ix = (ww - iw) * 0.5;
+      var iy = (wh - ih) * 0.5;
+
+      imageData.style.transformOrigin = "0% 0%";
+      imageData.style.transform = "matrix("+s+", 0, 0, "+s+", "+ix+", "+iy+")";
+    };
+
+
+    const getOriginalImageInfor = function(){
+
+        const imageData = document.getElementById("_imageData");
+        const imageWidth = imageData.width;
+        const imageHeight = imageData.height;
+        return {imageWidth,imageHeight}
+    }
+
+    const drawFixedBoundingBox = function(){
+        const fixedBoundingBoxCoordinates = {x:220,y:144,width:140,height:150}
+        const imageData = document.getElementById("_imageData");
+        const ctx = imageData.getContext("2d");
+        ctx.rect(fixedBoundingBoxCoordinates.x,fixedBoundingBoxCoordinates.y,fixedBoundingBoxCoordinates.width,fixedBoundingBoxCoordinates.height);
+        ctx.strokeStyle = "red";
+        ctx.stroke();
+
+    }
+
+    const drawFaceBoundingBox = function(faceBoundingBox,isLiveNess=false){
+        const {x,y,width,height} = faceBoundingBox;
+        const imageData = document.getElementById("_imageData");
+        const ctx = imageData.getContext("2d");
+        ctx.strokeStyle = "blue";
+        ctx.font = "30px Arial"
+        let text = ''
+        if (isLiveNess){
+          text = "Alive"
+        }
+        else{
+          text = "Not Alive"
+        }
+        ctx.fillText(text,x,y)
+        ctx.rect(x,y,width,height);
+        ctx.stroke();
+    }
+
+    const checkFacePose = function(landMarks){
+        const tensor = toTensor(landMarks);
+        console.log(tensor);
+        const imageData = document.getElementById("_imageData");
+        const image = cv.imread(imageData)
+        getHeadpose(image,landMarks)
+
+    }
+
+    
+
+      
+  }
+</script>
 <script src="js/FaceArea.js"></script>
+<script src="js/Liveness.js"></script>
+<script src="js/Facepose.js"></script>
+
 
 <script>
 
@@ -27,86 +165,11 @@
 
 
 
-
-  handleTrackingResults = function(
-    brfv4,          // namespace
-    faces,          // tracked faces
-    imageDataCtx    // canvas context to draw into
-  ) {
-
-
-    drawFixedBoundingBox()
-
-    for(var i = 0; i < faces.length; i++) {
-
-      var face = faces[i];
-
-      console.log(face);
-
-      const {imageWidth,imageHeight} = getOriginalImageInfor()
-
-      console.log(checkSize(face.bounds,{imageWidth,imageHeight}))
-   
-
-      if(face.state === brfv4.BRFState.FACE_TRACKING_START ||
-        face.state === brfv4.BRFState.FACE_TRACKING) {
-
-        imageDataCtx.strokeStyle = "#00a0ff";
-
-        for(var k = 0; k < face.vertices.length; k += 2) {
-          imageDataCtx.beginPath();
-          imageDataCtx.arc(face.vertices[k], face.vertices[k + 1], 2, 0, 2 * Math.PI);
-          imageDataCtx.stroke();
-        }
-      }
-    }
-  };
-
-  onResize = function () {
-
-    // fill whole browser
-
-    var imageData = document.getElementById("_imageData");
-
-    var ww = window.innerWidth;
-    var wh = window.innerHeight;
-
-    var s = wh / imageData.height;
-
-    if(imageData.width * s < ww) {
-      s = ww / imageData.width;
-    }
-
-    var iw = imageData.width * s;
-    var ih = imageData.height * s;
-    var ix = (ww - iw) * 0.5;
-    var iy = (wh - ih) * 0.5;
-
-    imageData.style.transformOrigin = "0% 0%";
-    imageData.style.transform = "matrix("+s+", 0, 0, "+s+", "+ix+", "+iy+")";
-  };
-
-
-  const getOriginalImageInfor = function(){
-
-      const imageData = document.getElementById("_imageData");
-      const imageWidth = imageData.width;
-      const imageHeight = imageData.height;
-      return {imageWidth,imageHeight}
-  }
-
-  const drawFixedBoundingBox = function(){
-      const fixedBoundingBoxCoordinates = {x:220,y:144,width:140,height:150}
-      const imageData = document.getElementById("_imageData");
-      const ctx = imageData.getContext("2d");
-      ctx.rect(fixedBoundingBoxCoordinates.x,fixedBoundingBoxCoordinates.y,fixedBoundingBoxCoordinates.width,fixedBoundingBoxCoordinates.height);
-      ctx.strokeStyle = "red";
-      ctx.stroke();
-
-  }
-
-
 </script>
+
+<script async src="js/opencv/opencv.js" onload="openCvReady();"></script>
+
+<canvas id="canvasOutput"></canvas>
 
 </body>
 
