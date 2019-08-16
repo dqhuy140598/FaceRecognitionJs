@@ -139,8 +139,8 @@
     }
 
     const checkFacePose = function(landMarks){
-        const tensor = toTensor(landMarks);
-        console.log(tensor);
+        // const tensor = toTensor(landMarks);
+        // console.log(tensor);
         const imageData = document.getElementById("_imageData");
         const image = cv.imread(imageData)
         getHeadpose(image,landMarks)
@@ -154,7 +154,8 @@
 </script>
 <script src="js/FaceArea.js"></script>
 <script src="js/Liveness.js"></script>
-<script src="js/Facepose.js"></script>
+<!-- <script src="js/Facepose.js"></script> -->
+<script src="js/Facepose2.js"></script>
 
 
 <script>

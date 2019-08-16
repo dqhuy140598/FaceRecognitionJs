@@ -60,7 +60,7 @@ const toTensor = function(landMarks){
     return coords
 }
 
-const getHeadpose = function(image,landMarks2d,verbose=false){
+const getHeadpose = async function(image,landMarks2d,verbose=false){
 
 
     window.beforeunload = () => {
@@ -89,16 +89,10 @@ const getHeadpose = function(image,landMarks2d,verbose=false){
     const lm = landMarks2d[48];
     const rm = landMarks2d[54];
 
-    
-
-    // distCoeffs = tf.zeros([4,1]);
 
     const modelPoints = cv.Mat.zeros(6, 3, cv.CV_64FC1);
 
-    console.log(cv.solvePnP);
-
     const Points3D = [0.0,0.0,0.0,0.0,-330.0,-65.0,-225,170.0,-135.0,225.0,170.0,-135.0,225.0,170.0,-135.0,-150.0,-150.0,-125.0,150.0,-150.0,-125.0]
-
 
     Points3D.map((v,i)=>{
         modelPoints.data64F[i] = v
@@ -106,48 +100,23 @@ const getHeadpose = function(image,landMarks2d,verbose=false){
 
     console.log(modelPoints)
 
-    // [
-    //     0.0,
-    //     0.0,
-    //     0.0, // Nose tip
+    const center = [width/2,height/2]
 
-    //     0.0,
-    //     -330,0,
-    //     -65.0, // HACK! solvePnP doesn't work with 3 points, so copied the
-    //     //   first point to make the input 4 points
-    //     // 0.0, -330.0, -65.0,  // Chin
-    //     -225.0,
-    //     170.0,
-    //     -135.0, // Left eye left corner
+    const rvec = new cv.Mat({ width: 1, height: 3 }, cv.CV_64FC1);
+    const tvec = new cv.Mat({ width: 1, height: 3 }, cv.CV_64FC1);
 
-    //     225.0,
-    //     170.0,
-    //     -135.0, // Right eye right corne
+    const imagePoints = cv.Mat.zeros(6, 2, cv.CV_64FC1);
 
-    //      -150.0, -150.0, -125.0,  // Left Mouth corner
-    //      150.0, -150.0, -125.0  // Right mouth corner
-    //   ].map((v,i)=>{
-    //     modelPoints.data64F[i] = v;
-    //   })
+    const pointZ = cv.matFromArray(1, 3, cv.CV_64FC1, [0.0, 0.0, 1000.0]);
+    const pointY = cv.matFromArray(1, 3, cv.CV_64FC1, [0.0, 1000.0, 0.0]);
+    const pointX = cv.matFromArray(1, 3, cv.CV_64FC1, [1000.0, 0.0, 0.0]);
 
-      console.log(modelPoints)
+    const noseEndPoint2DZ = new cv.Mat();
+    const nose_end_point2DY = new cv.Mat();
+    const nose_end_point2DX = new cv.Mat();
+    const jaco = new cv.Mat();
 
-      const center = [width/2,height/2]
-
-      const rvec = new cv.Mat({ width: 1, height: 3 }, cv.CV_64FC1);
-      const tvec = new cv.Mat({ width: 1, height: 3 }, cv.CV_64FC1);
-
-      const imagePoints = cv.Mat.zeros(6, 2, cv.CV_64FC1);
-
-      const pointZ = cv.matFromArray(1, 3, cv.CV_64FC1, [0.0, 0.0, 1000.0]);
-      const pointY = cv.matFromArray(1, 3, cv.CV_64FC1, [0.0, 1000.0, 0.0]);
-      const pointX = cv.matFromArray(1, 3, cv.CV_64FC1, [1000.0, 0.0, 0.0]);
-      const noseEndPoint2DZ = new cv.Mat();
-      const nose_end_point2DY = new cv.Mat();
-      const nose_end_point2DX = new cv.Mat();
-      const jaco = new cv.Mat();
-
-      const cameraMatrix = cv.matFromArray(3, 3, cv.CV_64FC1, [
+    const cameraMatrix = cv.matFromArray(3, 3, cv.CV_64FC1, [
         width,
         0,
         center[0] ,
@@ -157,7 +126,7 @@ const getHeadpose = function(image,landMarks2d,verbose=false){
         0,
         0,
         1
-      ]);
+        ]);
 
     [
         ns.x,
@@ -171,33 +140,35 @@ const getHeadpose = function(image,landMarks2d,verbose=false){
         re.y, // Right eye right corner
         lm.x, lm.y, // Left Mouth corner
         rm.x, rm.y // Right mouth corner
-      ].map((v, i) => {
-        imagePoints.data64F[i] = v;
-      });
+        ].map((v, i) => {
+            imagePoints.data64F[i] = v;
+    });
 
       console.log(imagePoints)
 
       tvec.data64F[0] = -100;
       tvec.data64F[1] = 100;
       tvec.data64F[2] = 1000;
-      const distToLeftEyeX = Math.abs(le.x - ns.x);
-      const distToRightEyeX = Math.abs(re.x - ns.x);
-      if (distToLeftEyeX < distToRightEyeX) {
-        // looking at left
-        rvec.data64F[0] = -1.0;
-        rvec.data64F[1] = -0.75;
-        rvec.data64F[2] = -3.0;
-      } else {
-        // looking at right
-        rvec.data64F[0] = 1.0;
-        rvec.data64F[1] = -0.75;
-        rvec.data64F[2] = -3.0;
-      }
+
+    //   const distToLeftEyeX = Math.abs(le.x - ns.x);
+    //   const distToRightEyeX = Math.abs(re.x - ns.x);
+
+    //   if (distToLeftEyeX < distToRightEyeX) {
+    //     // looking at left
+    //     rvec.data64F[0] = -1.0;
+    //     rvec.data64F[1] = -0.75;
+    //     rvec.data64F[2] = -3.0;
+    //   } else {
+    //     // looking at right
+    //     rvec.data64F[0] = 1.0;
+    //     rvec.data64F[1] = -0.75;
+    //     rvec.data64F[2] = -3.0;
+    //   }
 
 
     const distCoeffs = cv.Mat.zeros(4, 1, cv.CV_64FC1);
 
-    const success = cv.solvePnP(
+    const success = await cv.solvePnP(
         modelPoints,
         imagePoints,
         cameraMatrix,
@@ -223,7 +194,7 @@ const getHeadpose = function(image,landMarks2d,verbose=false){
         distCoeffs,
         noseEndPoint2DZ,
         jaco
-      );
+    );
     //   cv.projectPoints(
     //     pointY,
     //     rvec,
