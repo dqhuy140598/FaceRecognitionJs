@@ -157,13 +157,6 @@ const getHeadpose = async function(image,landMarks2d,verbose=false){
       else{
           pZ.x = pZ.x + (pNose.x - pZ.x) * 2
       }
-      if(pZ.y > pNose.y){
-        pZ.y = pZ.y - (pZ.y - pNose.y) * 2
-      }
-        else{
-            pZ.y = pZ.y + (pNose.y - pZ.y) * 2
-        }
-
       cv.line(im, pNose, pZ, [255, 0, 0, 255], 2);
 
       //Display image
